@@ -346,3 +346,45 @@ export async function getPlacesMapByIds(ids: string[]) {
   }
   return out;
 }
+
+// ==== RANKINGS HELPERS ====
+
+// Wszystkie dania (uwaga: proste pobranie całej kolekcji – przy większej skali zrobimy paginację / chmurne agregacje)
+export async function listAllDishes() {
+  const snap = await getDocs(dishesCol());
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Dish));
+}
+
+// Wszystkie miejsca jako mapa id -> Place
+export async function listAllPlacesMap() {
+  const snap = await getDocs(placesCol());
+  const m = new Map<string, Place>();
+  snap.docs.forEach(d => m.set(d.id, { id: d.id, ...(d.data() as any) } as Place));
+  return m;
+}
+
+// Wszystkie miasta (surowo z places)
+export async function listAllCitiesRaw() {
+  const snap = await getDocs(placesCol());
+  const set = new Set<string>();
+  snap.docs.forEach(d => {
+    const raw = (d.data() as any).city as string;
+    if (raw) set.add(raw);
+  });
+  return Array.from(set).sort();
+}
+
+// Unikalne typy dań w całej bazie
+export async function listAllDishTypesGlobal() {
+  const snap = await getDocs(dishesCol());
+  const set = new Set<string>();
+  snap.docs.forEach(d => set.add(((d.data() as Dish).dishType)));
+  return Array.from(set).sort();
+}
+
+// Pobierz znajomych (uid) + mnie -> jeden zestaw do filtra "ja + znajomi"
+export async function listMeAndFriendsUids(meUid: string) {
+  const me = await getUser(meUid);
+  const ids = new Set<string>([meUid, ...Object.keys(me?.friends ?? {})]);
+  return Array.from(ids);
+}
