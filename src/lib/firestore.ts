@@ -1,7 +1,7 @@
 import { db, storage } from './firebase.client';
 import {
   addDoc, collection, serverTimestamp, getDocs, query, where,
-  doc, getDoc, setDoc, updateDoc, deleteDoc
+  doc, getDoc, setDoc, updateDoc, deleteDoc, documentId
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
@@ -313,4 +313,36 @@ export async function deleteStorageByUrl(url: string) {
   } catch (e) {
     console.warn('deleteStorageByUrl failed:', e);
   }
+}
+
+export async function listUserDishes(userId: string) {
+  const qy = query(dishesCol(), where('userId', '==', userId));
+  const snap = await getDocs(qy);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Dish));
+}
+
+/** Pobierz mapę miejsc po ID (chunks po 10 dla 'in') */
+export async function getPlacesMapByIds(ids: string[]) {
+  const out = new Map<string, Place>();
+  if (ids.length === 0) return out;
+
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+
+  for (const ch of chunks) {
+    const qy = query(placesCol(), where(documentId(), 'in', ch));
+    const snap = await getDocs(qy);
+    snap.docs.forEach(d => out.set(d.id, { id: d.id, ...(d.data() as any) } as Place));
+  }
+
+  // jeśli zostały jakieś pojedyncze (np. >30 i nie wpadły do chunków), dociągnij pojedynczo
+  if (out.size < ids.length) {
+    for (const id of ids) {
+      if (!out.has(id)) {
+        const s = await getDoc(doc(db, 'places', id));
+        if (s.exists()) out.set(id, { id: s.id, ...(s.data() as any) } as Place);
+      }
+    }
+  }
+  return out;
 }
