@@ -1,23 +1,18 @@
+import Link from 'next/link';
 import { Place } from '@/lib/firestore';
 
-export default function PlaceCard({ place }: { place: Place }) {
+export type PlaceCardProps = { place: Place };
+
+export default function PlaceCard({ place }: PlaceCardProps) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm hover:shadow-md transition">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="font-semibold text-base">{place.name}</div>
-          <div className="text-sm text-zinc-500">{place.city}</div>
-        </div>
+    <Link href={`/place/${place.id}`} className="block">
+      <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm hover:shadow-md transition">
+        <div className="font-semibold text-base text-emerald-900">{place.name}</div>
+        <div className="text-sm text-emerald-600">{place.city}</div>
+        {place.mapsUrl && (
+          <span className="mt-3 inline-block text-sm text-sky-600 underline">Mapa</span>
+        )}
       </div>
-      {place.mapsUrl && (
-        <a
-          href={place.mapsUrl}
-          target="_blank"
-          className="mt-3 inline-block text-sm text-blue-600 underline"
-        >
-          Otwórz w mapach
-        </a>
-      )}
-    </div>
+    </Link>
   );
 }
