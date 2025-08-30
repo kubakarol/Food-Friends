@@ -8,7 +8,7 @@ import AppShell from '@/components/AppShell';
 import PlaceCard from '@/components/PlaceCard';
 import {
   listPlacesInCityByAuthors, Place, listAllCities, ensureUser,
-  listFriends, UserDoc, listDishTypesForUser
+  listFriends, UserDoc, listDishTypesForCityAndAuthors
 } from '@/lib/firestore';
 import { debounce } from '@/lib/utils';
 import { LocateFixed, Loader2 } from 'lucide-react';
@@ -19,7 +19,7 @@ export default function FeedPage() {
   const router = useRouter();
 
   const [user, setUser] = useState<any>(null);
-  const [city, setCity] = useState('');              // stabilny SSR
+  const [city, setCity] = useState('');
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,30 +27,32 @@ export default function FeedPage() {
   const [friendsLoaded, setFriendsLoaded] = useState(false);
 
   const [dishTypes, setDishTypes] = useState<string[]>([]);
-  const [activeDish, setActiveDish] = useState<string>(''); // (na razie tylko UI)
+  const [activeDish, setActiveDish] = useState<string>(''); // na razie tylko UI
 
   const [cities, setCities] = useState<string[]>([]);
   const [geoLoading, setGeoLoading] = useState(false);
   const geoTriedRef = useRef(false);
 
-  useEffect(() =>
-    onAuthStateChanged(auth, async (u) => {
-      if (!u) { router.replace('/auth/login'); return; }
-      setUser(u);
+  // auth + podstawowe dane
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, async (u) => {
+        if (!u) { router.replace('/auth/login'); return; }
+        setUser(u);
 
-      const d = await ensureUser(u.uid);
-      if (d?.displayName) document.title = `Food Friends – ${d.displayName}`;
+        const d = await ensureUser(u.uid);
+        if (d?.displayName) document.title = `Food Friends – ${d.displayName}`;
 
-      setCities(await listAllCities());
-      setDishTypes(await listDishTypesForUser(u.uid));
+        setCities(await listAllCities());
 
-      const fr = await listFriends(u.uid);
-      setFriends(fr);
-      setFriendsLoaded(true);
+        const fr = await listFriends(u.uid);
+        setFriends(fr);
+        setFriendsLoaded(true);
 
-      const lastCity = localStorage.getItem('ff.city') || '';
-      if (lastCity) setCity(lastCity);
-    }), [router]
+        const lastCity = localStorage.getItem('ff.city') || '';
+        if (lastCity) setCity(lastCity);
+      }),
+    [router]
   );
 
   // auto-geo raz, tylko gdy nie ma miasta
@@ -62,15 +64,25 @@ export default function FeedPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [city]);
 
-  // załaduj miejsca (ja + znajomi)
+  // 1) ZAŁADUJ MIEJSCA (ja + znajomi) dla wybranego miasta
   useEffect(() => {
     (async () => {
-      if (!user || !friendsLoaded || !city) { setLoading(false); return; }
+      if (!user || !friendsLoaded || !city) { setLoading(false); setPlaces([]); return; }
       setLoading(true);
       const authors = [user.uid, ...friends.map((f) => f.uid)];
       const data = await listPlacesInCityByAuthors(city, authors);
       setPlaces(data);
       setLoading(false);
+    })();
+  }, [user, friendsLoaded, friends, city]);
+
+  // 2) KATEGORIE dla WYBRANEGO miasta (ja + znajomi)
+  useEffect(() => {
+    (async () => {
+      if (!user || !friendsLoaded || !city) { setDishTypes([]); return; }
+      const authors = [user.uid, ...friends.map((f) => f.uid)];
+      const types = await listDishTypesForCityAndAuthors(city, authors);
+      setDishTypes(types);
     })();
   }, [user, friendsLoaded, friends, city]);
 
@@ -81,10 +93,11 @@ export default function FeedPage() {
   }, [city, cities]);
 
   const setCityDebounced = useMemo(
-    () => debounce((v: string) => {
-      setCity(v);
-      localStorage.setItem('ff.city', v);
-    }, 150),
+    () =>
+      debounce((v: string) => {
+        setCity(v);
+        localStorage.setItem('ff.city', v);
+      }, 150),
     []
   );
 
@@ -143,7 +156,6 @@ export default function FeedPage() {
           )}
         </div>
 
-        {/* 📍 ikona lucide-react */}
         <button
           onClick={useMyLocation}
           className="w-10 h-10 rounded-full border border-emerald-200 bg-white flex items-center justify-center hover:bg-emerald-50 active:scale-95 transition disabled:opacity-60"
@@ -156,7 +168,7 @@ export default function FeedPage() {
         </button>
       </div>
 
-      {/* (opcjonalnie) Twoje typy dań jako tagi */}
+      {/* Kategorie (chipsy) – zależne od miasta */}
       {dishTypes.length > 0 && (
         <div className="flex gap-2 flex-wrap mb-4">
           <button
@@ -176,6 +188,7 @@ export default function FeedPage() {
               className={`px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 ${
                 activeDish === t ? 'ring-2 ring-emerald-400' : ''
               }`}
+              title={t}
             >
               {t}
             </button>

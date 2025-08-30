@@ -263,6 +263,34 @@ export async function listDishTypesForUser(userId: string) {
   return Array.from(set).sort();
 }
 
+/** Kategorie dań zjedzonych w DANYM mieście przez podanych autorów (Ty + znajomi). */
+export async function listDishTypesForCityAndAuthors(city: string, authorIds: string[]) {
+  if (!city || authorIds.length === 0) return [];
+
+  // miejsca w tym mieście (nie filtrujemy po createdBy – liczy się miasto)
+  const nc = normCity(city);
+  const ps = await getDocs(query(placesCol(), where('normalizedCity', '==', nc)));
+  const placeIds = new Set<string>(ps.docs.map(d => d.id));
+  if (placeIds.size === 0) return [];
+
+  // dania autorów (max 10 wartości w "in" -> porcjujemy)
+  const chunks: string[][] = [];
+  for (let i = 0; i < authorIds.length; i += 10) chunks.push(authorIds.slice(i, i + 10));
+
+  const types = new Set<string>();
+  for (const ch of chunks) {
+    const qy = query(collection(db, 'dishes'), where('userId', 'in', ch));
+    const snap = await getDocs(qy);
+    snap.docs.forEach(docu => {
+      const d = docu.data() as Dish;
+      if (placeIds.has(d.placeId)) types.add(d.dishType);
+    });
+  }
+
+  return Array.from(types).sort();
+}
+
+
 export async function getDish(id: string) {
   const s = await getDoc(doc(db, 'dishes', id));
   return s.exists() ? ({ id: s.id, ...s.data() } as Dish) : null;
@@ -277,7 +305,7 @@ export async function deleteDish(dishId: string) {
   await deleteDoc(doc(db, 'dishes', dishId));
 }
 
-/** Spróbuj skasować plik w Storage podając jego publiczny URL (bez błędu przy niepowodzeniu). */
+/** Spróbuj skasować plik w Storage podając jego publiczny URL */
 export async function deleteStorageByUrl(url: string) {
   try {
     const r = ref(storage, url);

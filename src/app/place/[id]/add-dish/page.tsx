@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase.client';
 import { onAuthStateChanged } from 'firebase/auth';
 import AppShell from '@/components/AppShell';
-import { addDish, getPlace, uploadDishPhotos, getUser } from '@/lib/firestore';
+import { addDish, getPlace, uploadDishPhotos, getUser, listDishTypesForUser } from '@/lib/firestore';
 
-const DISH_TYPES = ['pizza','ramen','burger','sushi','kebab','salad','pasta','dessert','other'];
+const BASE_TYPES = ['pizza','ramen','burger','sushi','kebab','salad','pasta','dessert','other'];
 
 // ---- kompresja do webp, max 1600px ----
 async function compressImage(file: File, max = 1600, quality = 0.82): Promise<Blob> {
@@ -39,9 +39,12 @@ export default function AddDishPage() {
   const [dishName, setDishName] = useState('');
   const [dishType, setDishType] = useState('pizza');
 
+  const [allTypes, setAllTypes] = useState<string[]>(BASE_TYPES);
+  const [typesOpen, setTypesOpen] = useState(false);
+
   // stringi, by pozwolić na pustą wartość i usuwanie „0”
-  const [priceStr, setPriceStr] = useState<string>(''); // np. "19.90"
-  const [queueStr, setQueueStr] = useState<string>(''); // np. "0" albo ""
+  const [priceStr, setPriceStr] = useState<string>('');
+  const [queueStr, setQueueStr] = useState<string>('');
 
   const [taste, setTaste] = useState(8);
   const [portion, setPortion] = useState(4);
@@ -57,17 +60,20 @@ export default function AddDishPage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
-  // auth + autor
+  // auth + autor + własne typy dań (do sugestii)
   useEffect(
     () =>
       onAuthStateChanged(auth, async (u) => {
-        if (!u) {
-          router.replace('/auth/login');
-          return;
-        }
+        if (!u) { router.replace('/auth/login'); return; }
         setUser(u);
         const ud = await getUser(u.uid);
         setAuthorName(ud?.displayName || (u.email ?? ''));
+
+        try {
+          const mine = await listDishTypesForUser(u.uid);
+          const merged = Array.from(new Set([...BASE_TYPES, ...mine]));
+          setAllTypes(merged);
+        } catch {/* ignore */}
       }),
     [router]
   );
@@ -91,11 +97,10 @@ export default function AddDishPage() {
     if (!list || list.length === 0) return;
     const next: PickedPhoto[] = [];
     for (const f of Array.from(list)) {
-      if (!f.type.startsWith('image/')) continue; // tylko obrazy
+      if (!f.type.startsWith('image/')) continue;
       const url = URL.createObjectURL(f);
       next.push({ file: f, url });
     }
-    // limit np. 12 zdjęć
     setPhotos(prev => [...prev, ...next].slice(0, 12));
   }
 
@@ -129,7 +134,6 @@ export default function AddDishPage() {
         photos: [],
       });
 
-      // upload zdjęć (po kompresji)
       if (photos.length) {
         const blobs = await Promise.all(photos.map(p => compressImage(p.file)));
         await uploadDishPhotos(user.uid, dishId, blobs);
@@ -149,6 +153,13 @@ export default function AddDishPage() {
     addFiles(e.dataTransfer.files);
   }
 
+  // filtrowanie podpowiedzi w comboboxie
+  const filtered = useMemo(() => {
+    const q = dishType.trim().toLowerCase();
+    if (!q) return allTypes;
+    return allTypes.filter(t => t.toLowerCase().includes(q));
+  }, [allTypes, dishType]);
+
   return (
     <AppShell title={`Dodaj danie: ${placeName}`}>
       <form onSubmit={save} className="space-y-4">
@@ -160,17 +171,35 @@ export default function AddDishPage() {
           required
         />
 
-        <select
-          className="w-full border rounded-xl px-3 py-2 border-emerald-200"
-          value={dishType}
-          onChange={(e) => setDishType(e.target.value)}
-        >
-          {DISH_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+        {/* Combobox na typ dania (wpisz własny albo wybierz z listy) */}
+        <div className="relative">
+          <label className="text-sm block mb-1">Kategoria</label>
+          <input
+            className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+            value={dishType}
+            onChange={(e) => { setDishType(e.target.value); setTypesOpen(true); }}
+            onFocus={() => setTypesOpen(true)}
+            onBlur={() => setTimeout(() => setTypesOpen(false), 120)}
+            placeholder="np. pizza, ramen…"
+            autoComplete="off"
+          />
+          {typesOpen && filtered.length > 0 && (
+            <div className="absolute left-0 right-0 z-10 mt-1 rounded-xl border border-emerald-200 bg-white shadow-md max-h-60 overflow-auto">
+              {filtered.map(t => (
+                <button
+                  type="button"
+                  key={t}
+                  className="w-full text-left px-3 py-2 hover:bg-emerald-50"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setDishType(t); setTypesOpen(false); }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="mt-1 text-xs text-emerald-700">Możesz wpisać własną kategorię lub wybrać z listy.</p>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <label className="text-sm">
