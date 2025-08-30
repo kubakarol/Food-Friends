@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Food Friends',
   description: 'Twoje miejsca z jedzeniem, oceny i rankingi.',
   manifest: '/manifest.webmanifest',
-  icons: [{ rel: 'icon', url: '/icons/icon-192.png' }]
+  icons: [{ rel: 'icon', url: '/icons/foodFriends.png' }]
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

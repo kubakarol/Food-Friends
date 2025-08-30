@@ -158,7 +158,7 @@ export default function RankingsPage() {
         label: p?.name ?? 'Miejsce',
         sub: p?.city,
         right: avg.toFixed(3), // wyżej = lepiej
-        extra: `${n} próbek`,
+        extra: `${n} danie/dania`,
       };
     });
     rows.sort((a, b) => parseFloat(b.right) - parseFloat(a.right));
