@@ -5,7 +5,6 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-
 const normCity = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 /** ---------- PLACES ---------- */
@@ -35,22 +34,18 @@ export async function addPlace(p: Place) {
   return refd.id;
 }
 
-// miejsca w MIEŚCIE dodane przez zestaw autorów (ja + znajomi)
 export async function listPlacesInCityByAuthors(city: string, authors: string[]) {
   const nc = normCity(city);
   const chunks: string[][] = [];
   for (let i = 0; i < authors.length; i += 10) chunks.push(authors.slice(i, i + 10));
 
   const res: Place[] = [];
-
-  // szybkie zapytania po normalizedCity
   for (const ch of chunks) {
     const qy = query(placesCol(), where('normalizedCity', '==', nc), where('createdBy', 'in', ch));
     const snap = await getDocs(qy);
     snap.docs.forEach(d => res.push({ id: d.id, ...d.data() } as Place));
   }
 
-  // fallback: wszystkie z miasta i ręczna filtracja autorów
   if (res.length === 0) {
     const all = await getDocs(placesCol());
     all.docs.forEach(d => {
@@ -68,7 +63,7 @@ export async function listPlacesInCityByAuthors(city: string, authors: string[])
 
 export async function listAllCities() {
   const snap = await getDocs(placesCol());
-  const map = new Map<string, string>(); // norm -> oryginał
+  const map = new Map<string, string>();
   snap.docs.forEach(d => {
     const raw = (d.data() as any).city as string;
     const n = normCity(raw);
@@ -96,37 +91,80 @@ export async function getUser(uid: string) {
   return s.exists() ? (s.data() as UserDoc) : null;
 }
 
-export async function ensureUser(uid: string, patch?: Partial<UserDoc>) {
+/**
+ * Tworzy dokument usera lub:
+ *  - gdy overwrite=false (domyślnie): uzupełnia TYLKO brakujące pola
+ *  - gdy overwrite=true: nadpisuje przekazane pola
+ */
+export async function ensureUser(uid: string, patch?: Partial<UserDoc>, overwrite = false) {
   const r = doc(db, 'users', uid);
   const s = await getDoc(r);
 
   if (!s.exists()) {
     const friendCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const data: UserDoc = { friendCode, friends: {}, photoURL: null, ...patch };
+    const data: UserDoc = { friendCode, friends: {}, photoURL: null, ...(patch || {}) };
     await setDoc(r, data as any);
     return data;
-  } else if (patch && Object.keys(patch).length) {
-    await updateDoc(r, patch as any);
-    return { ...(s.data() as UserDoc), ...patch };
   }
-  return s.data() as UserDoc;
+
+  const current = s.data() as UserDoc;
+
+  if (patch && Object.keys(patch).length) {
+    if (overwrite) {
+      await updateDoc(r, patch as any);
+      return { ...current, ...patch };
+    }
+
+    const toPatch: Partial<UserDoc> = {};
+    (Object.keys(patch) as (keyof UserDoc)[]).forEach((k) => {
+      const curr = current[k];
+      const next = patch[k];
+      if (curr == null || curr === '') {
+        if (next != null && next !== '') toPatch[k] = next as any;
+      }
+    });
+
+    if (Object.keys(toPatch).length) {
+      await updateDoc(r, toPatch as any);
+      return { ...current, ...toPatch };
+    }
+  }
+
+  return current;
 }
 
-// zaproszenia
+// --- ZAPROSZENIA ---
 const reqsCol = () => collection(db, 'friendRequests');
-export type FriendRequest = { id?: string; fromUid: string; toUid: string; createdAt?: any };
+
+export type FriendRequest = {
+  id?: string;
+  fromUid: string;
+  toUid: string;
+  fromName?: string;  // snapshot imienia nadawcy
+  createdAt?: any;
+};
 
 export async function sendFriendRequest(fromUid: string, toCode: string) {
   const usersSnap = await getDocs(collection(db, 'users'));
   let toUid: string | null = null;
   usersSnap.forEach(d => {
-    const u = d.data() as UserDoc;
+    const u = (d.data() as UserDoc);
     if (u.friendCode?.toUpperCase() === toCode.toUpperCase()) toUid = d.id;
   });
+
   if (!toUid || toUid === fromUid) throw new Error('Nie znaleziono użytkownika z tym kodem.');
-  const pend = await getDocs(query(reqsCol(), where('fromUid', '==', fromUid), where('toUid', '==', toUid)));
+
+  const pend = await getDocs(query(
+    reqsCol(),
+    where('fromUid', '==', fromUid),
+    where('toUid', '==', toUid)
+  ));
   if (!pend.empty) throw new Error('Zaproszenie już wysłane.');
-  await addDoc(reqsCol(), { fromUid, toUid, createdAt: serverTimestamp() });
+
+  const me = await getUser(fromUid);
+  const fromName = me?.displayName || null;
+
+  await addDoc(reqsCol(), { fromUid, toUid, fromName, createdAt: serverTimestamp() });
 }
 
 export async function listIncomingRequests(uid: string) {
@@ -197,7 +235,6 @@ export async function uploadDishPhotos(userId: string, dishId: string, files: (F
   const urls: string[] = [];
   for (const file of files) {
     const r = ref(storage, `dishes/${userId}/${dishId}/${crypto.randomUUID()}`);
-    // Blob po kompresji może nie mieć type -> wymuś webp
     const contentType = (file as any).type || 'image/webp';
     await uploadBytes(r, file, {
       contentType,
@@ -218,7 +255,6 @@ export async function listDishesForPlace(placeId: string) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Dish));
 }
 
-// typy dań użytkownika (do chipsów)
 export async function listDishTypesForUser(userId: string) {
   const qy = query(dishesCol(), where('userId', '==', userId));
   const snap = await getDocs(qy);
@@ -244,11 +280,9 @@ export async function deleteDish(dishId: string) {
 /** Spróbuj skasować plik w Storage podając jego publiczny URL (bez błędu przy niepowodzeniu). */
 export async function deleteStorageByUrl(url: string) {
   try {
-    // ref() akceptuje też https URL-e z Firebase Storage
     const r = ref(storage, url);
     await deleteObject(r);
   } catch (e) {
-    // zostaw plik jako sierotę, nie blokuj UX
     console.warn('deleteStorageByUrl failed:', e);
   }
 }

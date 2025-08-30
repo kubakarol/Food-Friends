@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase.client';
 import { ensureUser } from '@/lib/firestore';
 
@@ -17,17 +17,24 @@ export default function RegisterPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr('');
-    if (!displayName.trim()) {
-      setErr('Podaj nazwę wyświetlaną.'); return;
+    const name = displayName.trim();
+    if (!name) {
+      setErr('Podaj nazwę wyświetlaną.');
+      return;
     }
     try {
       setLoading(true);
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
-      // utwórz dokument usera z nazwą wyświetlaną
-      await ensureUser(cred.user.uid, { displayName: displayName.trim() });
+
+      // 1) Ustaw nazwę w profilu Firebase Auth
+      await updateProfile(cred.user, { displayName: name });
+
+      // 2) Zapisz/uzupełnij dokument w Firestore (nadpisz pole displayName)
+      await ensureUser(cred.user.uid, { displayName: name }, true);
+
       router.replace('/feed');
     } catch (e: any) {
-      setErr(e.message || 'Błąd rejestracji');
+      setErr(e?.message || 'Błąd rejestracji');
     } finally {
       setLoading(false);
     }
@@ -43,7 +50,7 @@ export default function RegisterPage() {
           className="w-full border rounded-xl px-3 py-2 border-emerald-200"
           placeholder="Nazwa wyświetlana"
           value={displayName}
-          onChange={e=>setDisplayName(e.target.value)}
+          onChange={e => setDisplayName(e.target.value)}
           required
         />
         <input
@@ -51,7 +58,7 @@ export default function RegisterPage() {
           placeholder="E-mail"
           type="email"
           value={email}
-          onChange={e=>setEmail(e.target.value)}
+          onChange={e => setEmail(e.target.value)}
           required
         />
         <input
@@ -59,7 +66,7 @@ export default function RegisterPage() {
           placeholder="Hasło"
           type="password"
           value={pass}
-          onChange={e=>setPass(e.target.value)}
+          onChange={e => setPass(e.target.value)}
           required
         />
         {err && <p className="text-sm text-red-600">{err}</p>}
@@ -69,7 +76,7 @@ export default function RegisterPage() {
       </form>
 
       <button
-        onClick={()=>router.push('/auth/login')}
+        onClick={() => router.push('/auth/login')}
         className="mt-3 text-emerald-700 underline"
       >
         Masz konto? Zaloguj się
