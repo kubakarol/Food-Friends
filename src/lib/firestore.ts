@@ -388,3 +388,54 @@ export async function listMeAndFriendsUids(meUid: string) {
   const ids = new Set<string>([meUid, ...Object.keys(me?.friends ?? {})]);
   return Array.from(ids);
 }
+
+/** Miejsca w danym mieście, gdzie autorzy (Ty+znajomi) jedli dany dishType. */
+export async function listPlacesInCityByAuthorsAndDishType(
+  city: string,
+  authorIds: string[],
+  dishType: string
+) {
+  if (!city || authorIds.length === 0) return [];
+
+  const nc = normCity(city);
+  const wantedType = (dishType || '').trim().toLowerCase();
+
+  // 1) wszystkie miejsca w tym mieście -> Set(placeId)
+  const ps = await getDocs(query(placesCol(), where('normalizedCity', '==', nc)));
+  const placeIdsInCity = new Set<string>(ps.docs.map((d) => d.id));
+  if (placeIdsInCity.size === 0) return [];
+
+  // 2) dania autorów o podanym typie (chunk po 10 dla "in")
+  const chunks: string[][] = [];
+  for (let i = 0; i < authorIds.length; i += 10) chunks.push(authorIds.slice(i, i + 10));
+
+  const matchedPlaceIds = new Set<string>();
+
+  for (const ch of chunks) {
+    // tu robimy filtr po userId IN ch oraz dishType == wantedType
+    const qy = query(
+      dishesCol(),
+      where('userId', 'in', ch),
+      where('dishType', '==', wantedType)
+    );
+
+    const snap = await getDocs(qy);
+    snap.docs.forEach((docu) => {
+      const d = docu.data() as Dish;
+      if (d.placeId && placeIdsInCity.has(d.placeId)) {
+        matchedPlaceIds.add(d.placeId);
+      }
+    });
+  }
+
+  // 3) doczytaj Place po ID (chunks po 10)
+  const ids = Array.from(matchedPlaceIds);
+  const map = await getPlacesMapByIds(ids);
+
+  const res = ids
+    .map((id) => map.get(id))
+    .filter(Boolean) as Place[];
+
+  res.sort((a, b) => a.name.localeCompare(b.name));
+  return res;
+}
