@@ -40,24 +40,24 @@ export default function AddPlacePage() {
 
   return (
     <AppShell title="Dodaj miejsce">
-      <form onSubmit={save} className="space-y-3">
+      <form onSubmit={save} className="ff-card space-y-4">
         <div>
-          <label className="block text-sm mb-1">Nazwa</label>
-          <input className="w-full border rounded-xl px-3 py-2 border-emerald-200" value={name} onChange={e=>setName(e.target.value)} required />
+          <label className="ff-label">Nazwa</label>
+          <input className="ff-input" value={name} onChange={e=>setName(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-sm mb-1">Miasto</label>
-          <input className="w-full border rounded-xl px-3 py-2 border-emerald-200" value={city} onChange={e=>setCity(e.target.value)} required />
+          <label className="ff-label">Miasto</label>
+          <input className="ff-input" value={city} onChange={e=>setCity(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-sm mb-1">Link do Google Maps (opcjonalnie)</label>
-          <input className="w-full border rounded-xl px-3 py-2 border-emerald-200" value={mapsUrl} onChange={e=>setMapsUrl(e.target.value)} />
+          <label className="ff-label">Link do Google Maps (opcjonalnie)</label>
+          <input className="ff-input" value={mapsUrl} onChange={e=>setMapsUrl(e.target.value)} />
         </div>
 
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="rounded-2xl bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100">{err}</p>}
 
         <button disabled={saving}
-          className="w-full rounded-xl bg-emerald-600 text-white py-3 font-semibold shadow-sm disabled:opacity-60">
+          className="ff-button-primary w-full py-3">
           Zapisz miejsce
         </button>
       </form>

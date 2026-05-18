@@ -173,7 +173,7 @@ export default function AddDishPage() {
     <AppShell title={`Dodaj danie: ${placeName}`}>
       <form onSubmit={save} className="space-y-4">
         <input
-          className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+          className="ff-input"
           placeholder="Nazwa dania"
           value={dishName}
           onChange={(e) => setDishName(e.target.value)}
@@ -184,7 +184,7 @@ export default function AddDishPage() {
         <div className="relative">
           <label className="text-sm block mb-1">Kategoria</label>
           <input
-            className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+            className="ff-input"
             value={dishType}
             onChange={(e) => { setDishType(e.target.value); setTypesOpen(true); }}
             onFocus={() => setTypesOpen(true)}
@@ -193,12 +193,12 @@ export default function AddDishPage() {
             autoComplete="off"
           />
           {typesOpen && filtered.length > 0 && (
-            <div className="absolute left-0 right-0 z-10 mt-1 rounded-xl border border-emerald-200 bg-white shadow-md max-h-60 overflow-auto">
+            <div className="absolute left-0 right-0 z-10 mt-1 max-h-60 overflow-auto rounded-2xl border border-emerald-200 bg-white shadow-lg">
               {filtered.map(t => (
                 <button
                   type="button"
                   key={t}
-                  className="w-full text-left px-3 py-2 hover:bg-emerald-50"
+                  className="w-full px-3 py-2.5 text-left text-sm text-emerald-900 hover:bg-emerald-50"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => { setDishType(t); setTypesOpen(false); }}
                 >
@@ -216,7 +216,7 @@ export default function AddDishPage() {
             <input
               inputMode="decimal"
               step="0.01"
-              className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+              className="ff-input"
               value={priceStr}
               onChange={(e) => {
                 const v = e.target.value.replace(/\s/g, '');
@@ -230,7 +230,7 @@ export default function AddDishPage() {
             Kolejka (min)
             <input
               inputMode="numeric"
-              className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+              className="ff-input"
               value={queueStr}
               onChange={(e) => {
                 const v = e.target.value;
@@ -261,7 +261,7 @@ export default function AddDishPage() {
         </div>
 
         <textarea
-          className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+          className="ff-input"
           rows={3}
           placeholder="Uwagi (opcjonalnie)"
           value={notes}
@@ -272,7 +272,7 @@ export default function AddDishPage() {
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={onDrop}
-          className="rounded-xl border-2 border-dashed border-emerald-200 p-4 bg-emerald-50/30"
+          className="rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 p-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm text-emerald-800">
@@ -281,7 +281,7 @@ export default function AddDishPage() {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="px-3 py-1 rounded-lg border border-emerald-200 bg-white text-emerald-700"
+              className="ff-button-secondary px-3 py-1.5"
             >
               Wybierz pliki
             </button>
@@ -302,7 +302,7 @@ export default function AddDishPage() {
                 <div key={i} className="relative">
                   <img
                     src={p.url}
-                    className="h-20 w-20 object-cover rounded-lg border border-emerald-100"
+                    className="h-20 w-20 object-cover rounded-2xl border border-emerald-100 shadow-sm"
                     alt=""
                   />
                   <button
@@ -323,7 +323,7 @@ export default function AddDishPage() {
 
         <button
           disabled={saving}
-          className="w-full rounded-xl bg-emerald-600 text-white py-3 font-semibold disabled:opacity-60"
+          className="ff-button-primary w-full py-3"
         >
           Zapisz danie
         </button>

@@ -84,7 +84,7 @@ export default function PlaceDetailsPage() {
       right={
         <button
           onClick={() => router.push(`/place/${params.id}/add-dish`)}
-          className="rounded-lg bg-emerald-600 text-white px-3 py-1 text-sm"
+          className="ff-button-primary px-3 py-1.5"
         >
           Dodaj danie
         </button>
@@ -96,13 +96,13 @@ export default function PlaceDetailsPage() {
         <p>Nie znaleziono miejsca.</p>
       ) : (
         <>
-          <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm mb-4">
+          <div className="ff-card mb-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="font-semibold text-emerald-900">{place.name}</div>
-                <div className="text-emerald-600">{place.city}</div>
+                <div className="text-lg font-semibold text-emerald-950">{place.name}</div>
+                <div className="mt-1 text-sm text-emerald-700">{place.city}</div>
                 {place.mapsUrl && (
-                  <a href={place.mapsUrl} target="_blank" className="text-sky-700 underline mt-2 inline-block">
+                  <a href={place.mapsUrl} target="_blank" className="mt-3 inline-block text-sm font-medium text-sky-700">
                     Mapa
                   </a>
                 )}
@@ -115,28 +115,28 @@ export default function PlaceDetailsPage() {
                     setDeletePlaceOpen(true);
                   }}
                   disabled={deletingPlace}
-                  className="shrink-0 text-red-600 text-sm underline disabled:opacity-60"
+                  className="shrink-0 rounded-full px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
                 >
                   {deletingPlace ? 'Usuwanie...' : 'Usuń miejsce'}
                 </button>
               )}
             </div>
-            {placeError && <p className="mt-3 text-sm text-red-600">{placeError}</p>}
+            {placeError && <p className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100">{placeError}</p>}
           </div>
 
-          <h2 className="font-semibold mb-2">Zjedzone dania</h2>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-emerald-800">Zjedzone dania</h2>
           {dishes.length === 0 ? (
             <p className="text-emerald-700">Brak dań — dodaj pierwsze.</p>
           ) : (
             <ul className="space-y-2">
               {dishes.map((d) => (
-                <li key={d.id} className="rounded-xl border border-emerald-100 bg-white p-3">
+                <li key={d.id} className="ff-card">
                   {/* nagłówek */}
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-medium">
+                      <div className="font-semibold text-emerald-950">
                         {d.dishName}{' '}
-                        <span className="text-emerald-600 text-sm">({d.dishType})</span>
+                        <span className="text-sm font-medium text-emerald-600">({d.dishType})</span>
                       </div>
                       <div className="text-xs text-emerald-700 mt-1">
                         {d.authorName} • {d.createdAt?.toDate ? new Date(d.createdAt.toDate()).toLocaleString() : ''}
@@ -148,13 +148,13 @@ export default function PlaceDetailsPage() {
                     <div className="shrink-0 flex gap-2">
                         <button
                         onClick={() => router.push(`/dish/${d.id}/edit`)}
-                        className="text-emerald-700 text-sm underline"
+                        className="rounded-full px-2 py-1 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
                         >
                         Edytuj
                         </button>
                         <button
                         onClick={() => removeDish(d.id!)}
-                        className="text-red-600 text-sm underline"
+                        className="rounded-full px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50"
                         >
                         Usuń
                         </button>
@@ -167,7 +167,7 @@ export default function PlaceDetailsPage() {
                     <div className="text-sm text-emerald-700 mt-1">{d.ratings.price.toFixed(2)} zł</div>
                   )}
 
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
                     <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">Smak {d.ratings?.taste ?? '-'} / 10</span>
                     <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">Porcja {d.ratings?.portion ?? '-'} / 5</span>
                     <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">Obsługa {d.ratings?.service ?? '-'} / 5</span>
@@ -185,7 +185,7 @@ export default function PlaceDetailsPage() {
                           className="shrink-0"
                           aria-label="Powiększ zdjęcie"
                         >
-                          <img src={u} className="h-16 w-16 rounded-lg object-cover border border-emerald-100" alt="" />
+                          <img src={u} className="h-16 w-16 rounded-2xl object-cover border border-emerald-100 shadow-sm" alt="" />
                         </button>
                       ))}
                     </div>
@@ -195,14 +195,14 @@ export default function PlaceDetailsPage() {
                   {editingId === d.id ? (
                     <div className="mt-3">
                       <textarea
-                        className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+                        className="ff-input"
                         rows={3}
                         value={editNotes}
                         onChange={(e) => setEditNotes(e.target.value)}
                       />
                       <div className="mt-2 flex gap-2">
-                        <button onClick={saveNotes} className="px-3 py-1 rounded bg-emerald-600 text-white text-sm">Zapisz</button>
-                        <button onClick={() => setEditingId(null)} className="px-3 py-1 rounded border text-sm">Anuluj</button>
+                        <button onClick={saveNotes} className="ff-button-primary px-3 py-1.5">Zapisz</button>
+                        <button onClick={() => setEditingId(null)} className="ff-button-secondary px-3 py-1.5">Anuluj</button>
                       </div>
                     </div>
                   ) : (

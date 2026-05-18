@@ -142,7 +142,7 @@ export default function UserStats({ uid }: { uid: string }) {
           {/* Kafle */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {stats.summary.map((s) => (
-              <div key={s.label} className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+              <div key={s.label} className="ff-card">
                 <div className="text-sm text-emerald-700">{s.label}</div>
                 <div className="text-2xl font-semibold text-emerald-900 mt-1">{s.value}</div>
               </div>
@@ -150,7 +150,7 @@ export default function UserStats({ uid }: { uid: string }) {
           </div>
 
           {/* Top kategorie */}
-          <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+          <div className="ff-card">
             <div className="font-semibold mb-2">Najczęściej jedzone kategorie</div>
             <div className="space-y-2">
               {stats.topTypes.map(([type, n]) => (
@@ -161,7 +161,7 @@ export default function UserStats({ uid }: { uid: string }) {
 
           {/* Top miasta */}
           {stats.topCities.length > 0 && (
-            <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+            <div className="ff-card">
               <div className="font-semibold mb-2">Najaktywniejsze miasta</div>
               <div className="space-y-2">
                 {stats.topCities.map(([city, n]) => (
@@ -173,7 +173,7 @@ export default function UserStats({ uid }: { uid: string }) {
 
           {/* Wydatki miesięczne */}
           {stats.monthlyArr.length > 0 && (
-            <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+            <div className="ff-card">
               <div className="font-semibold mb-2">Wydatki miesięczne</div>
               <div className="space-y-2">
                 {stats.monthlyArr.map(([ym, sum]) => (

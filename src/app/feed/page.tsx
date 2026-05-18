@@ -227,10 +227,10 @@ void (async () => {
   return (
     <AppShell title="Miejsca">
       {/* Miasto + przycisk lokalizacji */}
-      <div className="relative mb-3 flex gap-2">
+      <div className="ff-card mb-3 flex gap-2 p-3">
         <div className="relative flex-1">
           <input
-            className="w-full border rounded-2xl px-3 py-2 pr-10 border-emerald-200 bg-white"
+            className="ff-input pr-10"
             value={city}
             onChange={(e) => {
               sessionStorage.removeItem('ff.geoPaused');
@@ -246,7 +246,7 @@ void (async () => {
           {!!city && (
             <button
               type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full hover:bg-emerald-50 flex items-center justify-center"
+              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-50"
               aria-label="Wyczyść miasto"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
@@ -262,11 +262,11 @@ void (async () => {
           )}
 
           {cityDropdownOpen && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 mt-1 rounded-xl border border-emerald-200 bg-white shadow-md overflow-hidden z-10">
+            <div className="absolute left-0 right-0 z-10 mt-1 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-lg">
               {suggestions.map((c) => (
                 <button
                   key={c}
-                  className="w-full text-left px-3 py-2 hover:bg-emerald-50"
+                  className="w-full px-3 py-2.5 text-left text-sm text-emerald-900 hover:bg-emerald-50"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     sessionStorage.removeItem('ff.geoPaused');
@@ -285,7 +285,7 @@ void (async () => {
 
         <button
           onClick={useMyLocation}
-          className="w-10 h-10 rounded-full border border-emerald-200 bg-white flex items-center justify-center hover:bg-emerald-50 active:scale-95 transition disabled:opacity-60"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-800 shadow-sm transition hover:bg-emerald-50 active:scale-95 disabled:opacity-60"
           disabled={geoLoading}
           aria-label="Użyj mojej lokalizacji"
           title="Użyj mojej lokalizacji"
@@ -305,7 +305,7 @@ void (async () => {
           <button
             type="button"
             onClick={() => setTypeDropdownOpen((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-left shadow-sm"
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-white/95 px-3.5 py-2.5 text-left shadow-sm transition hover:bg-white"
           >
             <span className="min-w-0">
               <span className="block text-xs text-emerald-600">Typ jedzenia</span>
@@ -355,11 +355,11 @@ void (async () => {
       )}
 
       {(!city || loading) ? (
-        <p className="text-emerald-700">
+        <p className="ff-card ff-muted">
           {city ? 'Ładowanie…' : 'Podaj miasto lub użyj 📍.'}
         </p>
       ) : places.length === 0 ? (
-        <p className="text-emerald-700">
+        <p className="ff-card ff-muted">
           {activeDish ? 'Brak miejsc dla wybranego typu.' : 'Brak miejsc.'}
         </p>
       ) : (

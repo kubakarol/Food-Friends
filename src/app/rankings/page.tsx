@@ -198,11 +198,11 @@ export default function RankingsPage() {
   return (
     <AppShell title="Rankingi">
       {/* FILTRY */}
-      <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm mb-4 grid gap-3 md:grid-cols-3">
+      <div className="ff-card mb-4 grid gap-3 md:grid-cols-3">
         <label className="text-sm">
           Rok
           <select
-            className="mt-1 w-full border border-emerald-200 rounded-xl px-3 py-2 bg-white"
+            className="ff-input mt-1"
             value={year}
             onChange={(e) => setYear(e.target.value === 'all' ? 'all' : Number(e.target.value))}
           >
@@ -214,7 +214,7 @@ export default function RankingsPage() {
         <label className="text-sm">
           Miasto
           <select
-            className="mt-1 w-full border border-emerald-200 rounded-xl px-3 py-2 bg-white"
+            className="ff-input mt-1"
             value={city}
             onChange={(e) => setCity(e.target.value)}
           >
@@ -226,7 +226,7 @@ export default function RankingsPage() {
         <label className="text-sm">
           Kategoria
           <select
-            className="mt-1 w-full border border-emerald-200 rounded-xl px-3 py-2 bg-white"
+            className="ff-input mt-1"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -256,7 +256,7 @@ export default function RankingsPage() {
 
 function Section({ title, rows, emptyText }: { title: string; rows: RankRow[]; emptyText: string }) {
   return (
-    <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+    <div className="ff-card">
       <h2 className="font-semibold text-emerald-900 mb-2">{title}</h2>
       {rows.length === 0 ? (
         <p className="text-emerald-700 text-sm">{emptyText}</p>
@@ -265,7 +265,7 @@ function Section({ title, rows, emptyText }: { title: string; rows: RankRow[]; e
           {rows.map((r, i) => (
             <li
               key={i}
-              className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100 px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 px-3 py-2.5"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-7 w-7 shrink-0 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center text-sm font-semibold">

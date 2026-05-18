@@ -21,3 +21,41 @@
 /* (opcjonalnie) delikatny outline przy focus */
 :root { --ring-color: 0 0% 0%; }
 *:focus { outline-color: hsl(var(--ring-color) / .5); }
+
+@layer components {
+  .ff-card {
+    @apply rounded-2xl border border-emerald-100/80 bg-white/95 p-4 shadow-[0_8px_28px_rgba(6,78,59,0.07)];
+  }
+
+  .ff-card-press {
+    @apply transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_14px_36px_rgba(6,78,59,0.11)] active:translate-y-0;
+  }
+
+  .ff-input {
+    @apply w-full rounded-2xl border border-emerald-200/90 bg-white px-3.5 py-2.5 text-emerald-950 shadow-sm outline-none transition placeholder:text-emerald-700/45 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10;
+  }
+
+  .ff-label {
+    @apply mb-1.5 block text-sm font-medium text-emerald-900;
+  }
+
+  .ff-button-primary {
+    @apply inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(5,150,105,0.24)] transition hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60;
+  }
+
+  .ff-button-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 active:scale-[0.99] disabled:opacity-60;
+  }
+
+  .ff-button-danger {
+    @apply inline-flex items-center justify-center rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(220,38,38,0.18)] transition hover:bg-red-700 active:scale-[0.99] disabled:opacity-60;
+  }
+
+  .ff-muted {
+    @apply text-sm text-emerald-700;
+  }
+
+  .ff-chip {
+    @apply inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-100;
+  }
+}

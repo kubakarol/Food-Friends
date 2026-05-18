@@ -165,7 +165,7 @@ export default function EditDishPage() {
     <AppShell title={`Edytuj danie: ${place?.name ?? ''}`}>
       <form onSubmit={save} className="space-y-4">
         <input
-          className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+          className="ff-input"
           placeholder="Nazwa dania"
           value={dishName}
           onChange={(e) => setDishName(e.target.value)}
@@ -173,7 +173,7 @@ export default function EditDishPage() {
         />
 
         <select
-          className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+          className="ff-input"
           value={dishType}
           onChange={(e) => setDishType(e.target.value)}
         >
@@ -186,7 +186,7 @@ export default function EditDishPage() {
             <input
               inputMode="decimal"
               step="0.01"
-              className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+              className="ff-input"
               value={priceStr}
               onChange={(e) => {
                 const v = e.target.value.replace(/\s/g, '');
@@ -199,7 +199,7 @@ export default function EditDishPage() {
             Kolejka (min)
             <input
               inputMode="numeric"
-              className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+              className="ff-input"
               value={queueStr}
               onChange={(e) => {
                 const v = e.target.value;
@@ -230,7 +230,7 @@ export default function EditDishPage() {
         </div>
 
         <textarea
-          className="w-full border rounded-xl px-3 py-2 border-emerald-200"
+          className="ff-input"
           rows={3}
           placeholder="Uwagi"
           value={notes}
@@ -244,7 +244,7 @@ export default function EditDishPage() {
             <div className="flex gap-2 flex-wrap">
               {existingPhotos.map((u, i) => (
                 <div key={i} className={`relative ${toRemove.has(i) ? 'opacity-50' : ''}`}>
-                  <img src={u} className="h-20 w-20 object-cover rounded-lg border border-emerald-100" alt="" />
+                  <img src={u} className="h-20 w-20 object-cover rounded-2xl border border-emerald-100 shadow-sm" alt="" />
                   <button
                     type="button"
                     onClick={() => toggleRemoveExisting(i)}
@@ -259,13 +259,13 @@ export default function EditDishPage() {
         )}
 
         {/* nowe zdjęcia */}
-        <div className="rounded-xl border-2 border-dashed border-emerald-200 p-4 bg-emerald-50/30">
+        <div className="rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm text-emerald-800">Dodaj kolejne zdjęcia (opcjonalnie)</div>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="px-3 py-1 rounded-lg border border-emerald-200 bg-white text-emerald-700"
+              className="ff-button-secondary px-3 py-1.5"
             >
               Wybierz pliki
             </button>
@@ -282,7 +282,7 @@ export default function EditDishPage() {
             <div className="mt-3 flex gap-2 flex-wrap">
               {newPhotos.map((p, i) => (
                 <div key={i} className="relative">
-                  <img src={p.url} className="h-20 w-20 object-cover rounded-lg border border-emerald-100" alt="" />
+                  <img src={p.url} className="h-20 w-20 object-cover rounded-2xl border border-emerald-100 shadow-sm" alt="" />
                   <button
                     type="button"
                     onClick={() => removeNew(i)}
@@ -299,10 +299,10 @@ export default function EditDishPage() {
         {err && <p className="text-sm text-red-600">{err}</p>}
 
         <div className="flex gap-2">
-          <button disabled={saving} className="flex-1 rounded-xl bg-emerald-600 text-white py-3 font-semibold disabled:opacity-60">
+          <button disabled={saving} className="ff-button-primary flex-1 py-3">
             Zapisz zmiany
           </button>
-          <button type="button" className="px-4 rounded-xl border" onClick={() => router.back()}>
+          <button type="button" className="ff-button-secondary px-4" onClick={() => router.back()}>
             Anuluj
           </button>
         </div>

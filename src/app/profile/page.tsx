@@ -175,7 +175,7 @@ export default function ProfilePage() {
       ) : (
         <>
           {/* Zaproszenia */}
-          <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm mb-4">
+          <div className="ff-card mb-4">
             <div className="font-semibold mb-3">Zaproszenia</div>
 
             {loadingIncoming ? (
@@ -191,7 +191,7 @@ export default function ProfilePage() {
                   return (
                     <li
                       key={r.id}
-                      className="rounded-xl border border-emerald-100 bg-emerald-50/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                      className="flex flex-col gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center gap-3 min-w-0 sm:flex-1">
                         <div className="h-9 w-9 rounded-full bg-emerald-200 text-emerald-900 flex items-center justify-center text-sm font-semibold">
@@ -206,7 +206,7 @@ export default function ProfilePage() {
                         <button
                           onClick={() => accept(r.id!, r.fromUid)}
                           disabled={busyId === r.id}
-                          className="inline-flex items-center justify-center gap-1 rounded-full bg-emerald-600 text-white px-3 py-1.5 text-sm hover:bg-emerald-700 disabled:opacity-60 flex-1 sm:flex-none"
+                          className="ff-button-primary flex-1 gap-1 rounded-full px-3 py-1.5 sm:flex-none"
                           title="Akceptuj"
                         >
                           <Check className="h-4 w-4" /> Akceptuj
@@ -215,7 +215,7 @@ export default function ProfilePage() {
                         <button
                           onClick={() => reject(r.id!)}
                           disabled={busyId === r.id}
-                          className="inline-flex items-center justify-center gap-1 rounded-full border px-3 py-1.5 text-sm hover:bg-emerald-50 disabled:opacity-60 flex-1 sm:flex-none"
+                          className="ff-button-secondary flex-1 gap-1 rounded-full px-3 py-1.5 sm:flex-none"
                           title="Odrzuć"
                         >
                           <X className="h-4 w-4" /> Odrzuć
@@ -229,11 +229,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Znajomi + wysyłanie zaproszeń */}
-          <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm mb-4">
+          <div className="ff-card mb-4">
             <div className="font-semibold mb-2">Znajomi</div>
             <div className="flex gap-2 mb-3">
               <input
-                className="flex-1 border rounded-xl px-3 py-2 border-emerald-200"
+                className="ff-input flex-1"
                 placeholder="Kod znajomego"
                 value={codeInput}
                 onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
@@ -241,7 +241,7 @@ export default function ProfilePage() {
               />
               <button
                 onClick={send}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
+                className="ff-button-primary gap-2"
               >
                 <Send className="h-4 w-4" /> Wyślij
               </button>
@@ -256,7 +256,7 @@ export default function ProfilePage() {
                 {friends.map((f) => (
                   <li
                     key={f.uid}
-                    className="rounded-xl border border-emerald-100 p-3 flex items-center gap-3"
+                    className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-3"
                   >
                     <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-semibold">
                       {(f.displayName || 'U')[0].toUpperCase()}
