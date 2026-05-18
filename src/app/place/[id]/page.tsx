@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
-import { getPlace, listDishesForPlace, Dish, Place, updateDish, deleteDish } from '@/lib/firestore';
+import { getPlace, listDishesForPlace, Dish, Place, updateDish, deleteDish, deletePlace } from '@/lib/firestore';
 import { auth } from '@/lib/firebase.client';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 
 type ViewerState = { open: boolean; list: string[]; index: number };
 
@@ -13,12 +13,14 @@ export default function PlaceDetailsPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [me, setMe] = useState<any>(null);
+  const [me, setMe] = useState<User | null>(null);
   useEffect(() => onAuthStateChanged(auth, setMe), []);
 
   const [place, setPlace] = useState<Place | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
+  const [placeError, setPlaceError] = useState('');
+  const [deletingPlace, setDeletingPlace] = useState(false);
 
   // lightbox
   const [viewer, setViewer] = useState<ViewerState>({ open: false, list: [], index: 0 });
@@ -62,6 +64,21 @@ export default function PlaceDetailsPage() {
     setDishes(ds => ds.filter(d => d.id !== id));
   }
 
+  async function removePlace() {
+    if (!me?.uid || !place) return;
+    if (!confirm('Na pewno usunąć to miejsce?')) return;
+
+    try {
+      setDeletingPlace(true);
+      setPlaceError('');
+      await deletePlace(params.id, me.uid);
+      router.push('/feed');
+    } catch (e: unknown) {
+      setPlaceError(e instanceof Error ? e.message : 'Nie udało się usunąć miejsca.');
+      setDeletingPlace(false);
+    }
+  }
+
   return (
     <AppShell
       title={place?.name ?? 'Miejsce'}
@@ -81,13 +98,28 @@ export default function PlaceDetailsPage() {
       ) : (
         <>
           <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm mb-4">
-            <div className="font-semibold text-emerald-900">{place.name}</div>
-            <div className="text-emerald-600">{place.city}</div>
-            {place.mapsUrl && (
-              <a href={place.mapsUrl} target="_blank" className="text-sky-700 underline mt-2 inline-block">
-                Mapa
-              </a>
-            )}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-emerald-900">{place.name}</div>
+                <div className="text-emerald-600">{place.city}</div>
+                {place.mapsUrl && (
+                  <a href={place.mapsUrl} target="_blank" className="text-sky-700 underline mt-2 inline-block">
+                    Mapa
+                  </a>
+                )}
+              </div>
+
+              {me?.uid === place.createdBy && (
+                <button
+                  onClick={removePlace}
+                  disabled={deletingPlace}
+                  className="shrink-0 text-red-600 text-sm underline disabled:opacity-60"
+                >
+                  {deletingPlace ? 'Usuwanie...' : 'Usuń miejsce'}
+                </button>
+              )}
+            </div>
+            {placeError && <p className="mt-3 text-sm text-red-600">{placeError}</p>}
           </div>
 
           <h2 className="font-semibold mb-2">Zjedzone dania</h2>

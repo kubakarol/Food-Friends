@@ -1,11 +1,30 @@
 import { db, storage } from './firebase.client';
 import {
   addDoc, collection, serverTimestamp, getDocs, query, where,
-  doc, getDoc, setDoc, updateDoc, deleteDoc, documentId
+  doc, getDoc, setDoc, updateDoc, deleteDoc, documentId, runTransaction
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const normCity = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+const normText = (s: string) => normCity(s).trim().replace(/\s+/g, ' ');
+
+function hashText(s: string) {
+  let hash = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    hash ^= s.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function slugForId(s: string) {
+  return normText(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'place';
+}
+
+function placeDocId(p: Pick<Place, 'name' | 'city' | 'createdBy'>) {
+  const key = `${p.createdBy}|${normText(p.city)}|${normText(p.name)}`;
+  return `${p.createdBy}_${hashText(key)}_${slugForId(`${p.city}-${p.name}`)}`;
+}
 
 /** ---------- PLACES ---------- */
 export type Place = {
@@ -22,16 +41,34 @@ export type Place = {
 const placesCol = () => collection(db, 'places');
 
 export async function addPlace(p: Place) {
-  const refd = await addDoc(placesCol(), {
-    name: p.name.trim(),
-    city: p.city.trim(),
-    normalizedCity: normCity(p.city),
-    mapsUrl: p.mapsUrl || null,
-    createdAt: serverTimestamp(),
-    createdBy: p.createdBy,
-    visitedBy: { [p.createdBy]: true },
+  const name = p.name.trim();
+  const city = p.city.trim();
+  if (!name || !city) throw new Error('Podaj nazwę i miasto.');
+
+  const id = placeDocId({ ...p, name, city });
+  const refd = doc(db, 'places', id);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(refd);
+    if (snap.exists()) {
+      const existing = snap.data() as Place;
+      if (existing.createdBy !== p.createdBy) throw new Error('To miejsce już istnieje.');
+      tx.update(refd, { [`visitedBy.${p.createdBy}`]: true });
+      return;
+    }
+
+    tx.set(refd, {
+      name,
+      city,
+      normalizedCity: normCity(city),
+      mapsUrl: p.mapsUrl || null,
+      createdAt: serverTimestamp(),
+      createdBy: p.createdBy,
+      visitedBy: { [p.createdBy]: true },
+    });
   });
-  return refd.id;
+
+  return id;
 }
 
 export async function listPlacesInCityByAuthors(city: string, authors: string[]) {
@@ -75,6 +112,27 @@ export async function listAllCities() {
 export async function getPlace(id: string) {
   const s = await getDoc(doc(db, 'places', id));
   return s.exists() ? ({ id: s.id, ...s.data() } as Place) : null;
+}
+
+export async function deletePlace(placeId: string, uid: string) {
+  const refd = doc(db, 'places', placeId);
+  const dishes = await listDishesForPlace(placeId);
+
+  if (dishes.length > 0) {
+    throw new Error('Nie można usunąć miejsca, które ma dodane dania. Usuń najpierw dania.');
+  }
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(refd);
+    if (!snap.exists()) return;
+
+    const place = snap.data() as Place;
+    if (place.createdBy !== uid) {
+      throw new Error('Tylko osoba, która dodała miejsce, może je usunąć.');
+    }
+
+    tx.delete(refd);
+  });
 }
 
 /** ---------- USERS / FRIENDS ---------- */

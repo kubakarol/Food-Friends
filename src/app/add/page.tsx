@@ -1,32 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { auth } from '@/lib/firebase.client';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { addPlace } from '@/lib/firestore';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 
 export default function AddPlacePage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [mapsUrl, setMapsUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const savingRef = useRef(false);
 
   useEffect(() => onAuthStateChanged(auth, (u) => { if (!u) router.replace('/auth/login'); else setUser(u); }), [router]);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!user) return;
+    if (!user || savingRef.current) return;
     try {
+      savingRef.current = true;
       setSaving(true);
+      setErr('');
       await addPlace({ name, city, mapsUrl: mapsUrl || null, createdBy: user.uid });
       router.push('/feed');
-    } catch (e: any) { setErr(e.message); } finally { setSaving(false); }
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Nie udało się zapisać miejsca.');
+      savingRef.current = false;
+      setSaving(false);
+    }
   }
 
   if (!user) return <div className="p-6">Ładowanie…</div>;
