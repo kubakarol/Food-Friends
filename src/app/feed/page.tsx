@@ -17,7 +17,7 @@ import {
   listDishTypesForCityAndAuthors,
 } from '@/lib/firestore';
 import { debounce } from '@/lib/utils';
-import { LocateFixed, Loader2 } from 'lucide-react';
+import { ChevronDown, LocateFixed, Loader2 } from 'lucide-react';
 
 const norm = (s: string) =>
   s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -51,6 +51,7 @@ export default function FeedPage() {
   const [geoLoading, setGeoLoading] = useState(false);
 
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
 
   // auth + podstawowe dane
   useEffect(
@@ -171,6 +172,7 @@ void (async () => {
     (async () => {
       if (!user || !friendsLoaded || !city) {
         setDishTypes([]);
+        setTypeDropdownOpen(false);
         return;
       }
       const authors = [user.uid, ...friends.map((f) => f.uid)];
@@ -178,6 +180,7 @@ void (async () => {
       setDishTypes(types);
       // jeśli aktywny filtr nie istnieje w tym mieście, wyczyść
       if (activeDish && !types.includes(activeDish)) setActiveDish('');
+      setTypeDropdownOpen(false);
     })();
   }, [user, friendsLoaded, friends, city]); // nie dodaję activeDish, żeby nie zapętlać
 
@@ -298,30 +301,56 @@ void (async () => {
 
       {/* Kategorie (chipsy) – zależne od miasta */}
       {dishTypes.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-4">
+        <div className="relative mb-4">
           <button
-            onClick={() => setActiveDish('')}
-            className={`px-3 py-1 rounded-full border ${
-              activeDish === ''
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'border-emerald-200 text-emerald-700'
-            }`}
+            type="button"
+            onClick={() => setTypeDropdownOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-left shadow-sm"
           >
-            Wszystkie
+            <span className="min-w-0">
+              <span className="block text-xs text-emerald-600">Typ jedzenia</span>
+              <span className="block truncate font-medium text-emerald-900">
+                {activeDish || `Wszystkie (${dishTypes.length})`}
+              </span>
+            </span>
+            <ChevronDown className={`h-5 w-5 shrink-0 text-emerald-700 transition ${typeDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {dishTypes.map((t) => (
-            <button
-              key={t}
-              onClick={() => setActiveDish(t)}
-              className={`px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 ${
-                activeDish === t ? 'ring-2 ring-emerald-400' : ''
-              }`}
-              title={t}
-            >
-              {t}
-            </button>
-          ))}
+          {typeDropdownOpen && (
+            <div className="absolute left-0 right-0 z-20 mt-1 max-h-72 overflow-auto rounded-2xl border border-emerald-200 bg-white p-1 shadow-lg">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setActiveDish('');
+                  setTypeDropdownOpen(false);
+                }}
+                className={`w-full rounded-xl px-3 py-2 text-left text-sm ${
+                  activeDish === '' ? 'bg-emerald-600 text-white' : 'text-emerald-800 hover:bg-emerald-50'
+                }`}
+              >
+                Wszystkie
+              </button>
+
+              {dishTypes.map((t) => (
+                <button
+                  type="button"
+                  key={t}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setActiveDish(t);
+                    setTypeDropdownOpen(false);
+                  }}
+                  className={`mt-1 w-full rounded-xl px-3 py-2 text-left text-sm ${
+                    activeDish === t ? 'bg-emerald-600 text-white' : 'text-emerald-800 hover:bg-emerald-50'
+                  }`}
+                  title={t}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -5,8 +5,23 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-const normCity = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+const normCity = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 const normText = (s: string) => normCity(s).trim().replace(/\s+/g, ' ');
+
+function cleanCity(s: string) {
+  const city = s.trim().replace(/\s+/g, ' ');
+  const aliases: Record<string, string> = {
+    gdansk: 'Gdańsk',
+    krakow: 'Kraków',
+    lodz: 'Łódź',
+    poznan: 'Poznań',
+    wroclaw: 'Wrocław',
+  };
+
+  return aliases[normCity(city)] ?? city.replace(/\p{L}+/gu, (part) =>
+    part.charAt(0).toLocaleUpperCase('pl-PL') + part.slice(1).toLocaleLowerCase('pl-PL')
+  );
+}
 
 function hashText(s: string) {
   let hash = 2166136261;
@@ -42,7 +57,7 @@ const placesCol = () => collection(db, 'places');
 
 export async function addPlace(p: Place) {
   const name = p.name.trim();
-  const city = p.city.trim();
+  const city = cleanCity(p.city);
   if (!name || !city) throw new Error('Podaj nazwę i miasto.');
 
   const id = placeDocId({ ...p, name, city });

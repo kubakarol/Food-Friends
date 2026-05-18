@@ -21,6 +21,7 @@ export default function PlaceDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [placeError, setPlaceError] = useState('');
   const [deletingPlace, setDeletingPlace] = useState(false);
+  const [deletePlaceOpen, setDeletePlaceOpen] = useState(false);
 
   // lightbox
   const [viewer, setViewer] = useState<ViewerState>({ open: false, list: [], index: 0 });
@@ -66,8 +67,6 @@ export default function PlaceDetailsPage() {
 
   async function removePlace() {
     if (!me?.uid || !place) return;
-    if (!confirm('Na pewno usunąć to miejsce?')) return;
-
     try {
       setDeletingPlace(true);
       setPlaceError('');
@@ -111,7 +110,10 @@ export default function PlaceDetailsPage() {
 
               {me?.uid === place.createdBy && (
                 <button
-                  onClick={removePlace}
+                  onClick={() => {
+                    setPlaceError('');
+                    setDeletePlaceOpen(true);
+                  }}
                   disabled={deletingPlace}
                   className="shrink-0 text-red-600 text-sm underline disabled:opacity-60"
                 >
@@ -211,6 +213,44 @@ export default function PlaceDetailsPage() {
             </ul>
           )}
         </>
+      )}
+
+      {deletePlaceOpen && place && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={() => {
+            if (!deletingPlace) setDeletePlaceOpen(false);
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-lg font-semibold text-emerald-950">Usunąć miejsce?</div>
+            <p className="mt-2 text-sm leading-6 text-emerald-800">
+              Miejsce „{place.name}” zniknie z listy. Usunąć można tylko miejsca bez dodanych dań.
+            </p>
+            {placeError && <p className="mt-3 text-sm text-red-600">{placeError}</p>}
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                disabled={deletingPlace}
+                onClick={() => setDeletePlaceOpen(false)}
+                className="flex-1 rounded-xl border border-emerald-200 bg-white py-2.5 text-sm font-semibold text-emerald-800 disabled:opacity-60"
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                disabled={deletingPlace}
+                onClick={removePlace}
+                className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {deletingPlace ? 'Usuwanie...' : 'Usuń'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* LIGHTBOX */}

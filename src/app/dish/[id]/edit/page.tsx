@@ -12,6 +12,15 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 const DISH_TYPES = ['pizza','ramen','burger','sushi','kebab','salad','pasta','dessert','other'];
 
+function parseDecimal(value: string) {
+  const normalized = value.trim().replace(',', '.');
+  if (!normalized) return null;
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    throw new Error('Cena powinna mieć format np. 49,99 albo 49.99.');
+  }
+  return Number(normalized);
+}
+
 // kompresja do webp
 async function compressImage(file: File, max = 1600, quality = 0.82): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
@@ -115,7 +124,7 @@ export default function EditDishPage() {
       setSaving(true);
       setErr('');
 
-      const price = priceStr !== '' ? Number(priceStr) : null;
+      const price = parseDecimal(priceStr);
       const queue = queueStr !== '' ? Number(queueStr) : 0;
 
       // zdjęcia do pozostawienia
@@ -179,8 +188,11 @@ export default function EditDishPage() {
               step="0.01"
               className="w-full border rounded-xl px-3 py-2 border-emerald-200"
               value={priceStr}
-              onChange={(e) => setPriceStr(e.target.value)}
-              placeholder="np. 19.90"
+              onChange={(e) => {
+                const v = e.target.value.replace(/\s/g, '');
+                if (v === '' || /^\d{0,5}([,.]\d{0,2})?$/.test(v)) setPriceStr(v);
+              }}
+              placeholder="np. 49,99"
             />
           </label>
           <label className="text-sm">
