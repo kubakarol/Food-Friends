@@ -15,6 +15,7 @@ export default function BottomNav() {
   const pathname = usePathname(); const router = useRouter();
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
+  const touchY = useRef<number | null>(null);
 
   useEffect(() => {
     lastY.current = window.scrollY;
@@ -34,11 +35,40 @@ export default function BottomNav() {
       lastY.current = y;
     }
 
+    function onTouchStart(e: TouchEvent) {
+      touchY.current = e.touches[0]?.clientY ?? null;
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (touchY.current == null) return;
+
+      const currentY = e.touches[0]?.clientY;
+      if (currentY == null) return;
+
+      const delta = currentY - touchY.current;
+      const y = window.scrollY;
+      const nearTop = y < 24;
+      const nearBottom = window.innerHeight + y >= document.documentElement.scrollHeight - 24;
+
+      if (nearTop || nearBottom || delta > 6) {
+        setHidden(false);
+      } else if (delta < -8 && y > 80) {
+        setHidden(true);
+      }
+
+      touchY.current = currentY;
+      lastY.current = y;
+    }
+
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
     };
   }, []);
 

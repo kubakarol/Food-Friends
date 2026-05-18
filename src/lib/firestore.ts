@@ -55,6 +55,27 @@ export type Place = {
 
 const placesCol = () => collection(db, 'places');
 
+async function getPlaceIdsInCity(city: string) {
+  const nc = normCity(city);
+  const ids = new Set<string>();
+
+  const indexed = await getDocs(query(placesCol(), where('normalizedCity', '==', nc)));
+  indexed.docs.forEach((d) => ids.add(d.id));
+
+  const all = await getDocs(placesCol());
+  all.docs.forEach((d) => {
+    const raw = d.data() as any;
+    const normalizedFromCity = normCity(raw.city || '');
+    const normalizedStored = normCity(raw.normalizedCity || '');
+
+    if (normalizedFromCity === nc || normalizedStored === nc) {
+      ids.add(d.id);
+    }
+  });
+
+  return ids;
+}
+
 export async function addPlace(p: Place) {
   const name = p.name.trim();
   const city = cleanCity(p.city);
@@ -91,24 +112,24 @@ export async function listPlacesInCityByAuthors(city: string, authors: string[])
   const chunks: string[][] = [];
   for (let i = 0; i < authors.length; i += 10) chunks.push(authors.slice(i, i + 10));
 
+  const byId = new Map<string, Place>();
   const res: Place[] = [];
   for (const ch of chunks) {
     const qy = query(placesCol(), where('normalizedCity', '==', nc), where('createdBy', 'in', ch));
     const snap = await getDocs(qy);
-    snap.docs.forEach(d => res.push({ id: d.id, ...d.data() } as Place));
+    snap.docs.forEach(d => byId.set(d.id, { id: d.id, ...d.data() } as Place));
   }
 
-  if (res.length === 0) {
-    const all = await getDocs(placesCol());
-    all.docs.forEach(d => {
-      const raw = (d.data() as any);
-      const n = normCity(raw.city || '');
-      if (n === nc && authors.includes(raw.createdBy)) {
-        res.push({ id: d.id, ...(raw as any) } as Place);
-      }
-    });
-  }
+  const all = await getDocs(placesCol());
+  all.docs.forEach(d => {
+    const raw = (d.data() as any);
+    const n = normCity(raw.city || raw.normalizedCity || '');
+    if (n === nc && authors.includes(raw.createdBy)) {
+      byId.set(d.id, { id: d.id, ...(raw as any) } as Place);
+    }
+  });
 
+  byId.forEach((p) => res.push(p));
   res.sort((a, b) => a.name.localeCompare(b.name));
   return res;
 }
@@ -341,9 +362,7 @@ export async function listDishTypesForCityAndAuthors(city: string, authorIds: st
   if (!city || authorIds.length === 0) return [];
 
   // miejsca w tym mieście (nie filtrujemy po createdBy – liczy się miasto)
-  const nc = normCity(city);
-  const ps = await getDocs(query(placesCol(), where('normalizedCity', '==', nc)));
-  const placeIds = new Set<string>(ps.docs.map(d => d.id));
+  const placeIds = await getPlaceIdsInCity(city);
   if (placeIds.size === 0) return [];
 
   // dania autorów (max 10 wartości w "in" -> porcjujemy)
@@ -470,12 +489,10 @@ export async function listPlacesInCityByAuthorsAndDishType(
 ) {
   if (!city || authorIds.length === 0) return [];
 
-  const nc = normCity(city);
   const wantedType = (dishType || '').trim().toLowerCase();
 
   // 1) wszystkie miejsca w tym mieście -> Set(placeId)
-  const ps = await getDocs(query(placesCol(), where('normalizedCity', '==', nc)));
-  const placeIdsInCity = new Set<string>(ps.docs.map((d) => d.id));
+  const placeIdsInCity = await getPlaceIdsInCity(city);
   if (placeIdsInCity.size === 0) return [];
 
   // 2) dania autorów o podanym typie (chunk po 10 dla "in")

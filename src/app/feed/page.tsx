@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase.client';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import PlaceCard from '@/components/PlaceCard';
@@ -36,7 +36,7 @@ async function canUseGeolocationSilently() {
 export default function FeedPage() {
   const router = useRouter();
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [city, setCity] = useState('');
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +52,7 @@ export default function FeedPage() {
 
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const autoGeoTried = useRef(false);
 
   // auth + podstawowe dane
   useEffect(
@@ -73,12 +74,21 @@ export default function FeedPage() {
         setFriendsLoaded(true);
 
         const lastCity = localStorage.getItem('ff.city') || '';
-        if (lastCity) setCity(lastCity);
+        if (lastCity) {
+          setCity(lastCity);
+        } else if (!autoGeoTried.current && localStorage.getItem('ff.geoUsed') === '1') {
+          autoGeoTried.current = true;
+          try {
+            if (await canUseGeolocationSilently()) await handleUseMyLocation();
+          } catch (e) {
+            console.warn('auto-geo failed', e);
+          }
+        }
       }),
     [router]
   );
 
-async function useMyLocation() {
+async function handleUseMyLocation() {
   sessionStorage.removeItem('ff.geoPaused');
   setGeoLoading(true);
 
@@ -133,7 +143,7 @@ async function useMyLocation() {
       localStorage.setItem('ff.city', guess);
       localStorage.setItem('ff.geoUsed', '1');
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     // tu trafia GeolocationPositionError
     console.warn('useMyLocation error:', err);
 
@@ -146,6 +156,7 @@ async function useMyLocation() {
 
 
   // cichy auto-geo tylko jeśli user kiedyś kliknął 📍 i przeglądarka ma już "granted"
+/*
 useEffect(() => {
   if (city) return;
 
@@ -157,7 +168,7 @@ useEffect(() => {
 void (async () => {
   try {
     if (await canUseGeolocationSilently()) {
-      await useMyLocation();
+      await handleUseMyLocation();
     }
   } catch (e) {
     console.warn('auto-geo failed', e);
@@ -165,6 +176,7 @@ void (async () => {
 })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [city]);
+*/
 
 
   // 1) KATEGORIE dla WYBRANEGO miasta (ja + znajomi)
@@ -215,10 +227,9 @@ void (async () => {
     return base.slice(0, 6);
   }, [city, cities]);
 
-  const setCityDebounced = useMemo(
+  const saveCityDebounced = useMemo(
     () =>
       debounce((v: string) => {
-        setCity(v);
         localStorage.setItem('ff.city', v);
       }, 150),
     []
@@ -233,8 +244,9 @@ void (async () => {
             className="ff-input pr-10"
             value={city}
             onChange={(e) => {
-              sessionStorage.removeItem('ff.geoPaused');
-              setCityDebounced(e.target.value);
+              const nextCity = e.target.value;
+              setCity(nextCity);
+              saveCityDebounced(nextCity);
               setCityDropdownOpen(true);
             }}
             onFocus={() => setCityDropdownOpen(true)}
@@ -250,7 +262,6 @@ void (async () => {
               aria-label="Wyczyść miasto"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
-                sessionStorage.setItem('ff.geoPaused', '1');
                 setCity('');
                 localStorage.removeItem('ff.city');
                 setCityDropdownOpen(true);
@@ -284,7 +295,7 @@ void (async () => {
         </div>
 
         <button
-          onClick={useMyLocation}
+          onClick={handleUseMyLocation}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-800 shadow-sm transition hover:bg-emerald-50 active:scale-95 disabled:opacity-60"
           disabled={geoLoading}
           aria-label="Użyj mojej lokalizacji"
