@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, PlusCircle, User, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,9 +13,43 @@ const items = [
 
 export default function BottomNav() {
   const pathname = usePathname(); const router = useRouter();
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    lastY.current = window.scrollY;
+
+    function onScroll() {
+      const y = window.scrollY;
+      const delta = y - lastY.current;
+      const nearTop = y < 24;
+      const nearBottom = window.innerHeight + y >= document.documentElement.scrollHeight - 24;
+
+      if (nearTop || nearBottom || delta < 0) {
+        setHidden(false);
+      } else if (delta > 4 && y > 80) {
+        setHidden(true);
+      }
+
+      lastY.current = y;
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
   return (
-    <nav className="sticky bottom-0 z-10 border-t border-emerald-100/80 bg-white/90 backdrop-blur-xl shadow-[0_-10px_24px_rgba(6,78,59,0.06)]">
-      <div className="mx-auto grid max-w-md grid-cols-4 px-2 py-1.5">
+    <nav
+      className={cn(
+        'fixed bottom-0 left-1/2 z-50 w-full max-w-md border-t border-emerald-100/80 bg-white/90 backdrop-blur-xl shadow-[0_-10px_24px_rgba(6,78,59,0.06)] transition-transform duration-200 ease-out',
+        hidden ? '-translate-x-1/2 translate-y-full' : '-translate-x-1/2 translate-y-0'
+      )}
+    >
+      <div className="mx-auto grid w-full max-w-md grid-cols-4 px-2 py-1.5">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname?.startsWith(href);
           return (

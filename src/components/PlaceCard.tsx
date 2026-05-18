@@ -7,10 +7,10 @@ export type PlaceCardProps = { place: Place };
 export default function PlaceCard({ place }: PlaceCardProps) {
   return (
     <div className="ff-card ff-card-press">
-      <div className="flex items-start justify-between gap-3">
-        <Link href={`/place/${place.id}`} className="min-w-0 flex-1">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <Link href={`/place/${place.id}`} className="block min-w-0 flex-1 overflow-hidden">
           <div className="truncate text-base font-semibold text-emerald-950">{place.name}</div>
-          <div className="mt-1 flex items-center gap-1.5 text-sm text-emerald-700">
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-sm text-emerald-700">
             <MapPin className="h-4 w-4 shrink-0" />
             <span className="truncate">{place.city}</span>
           </div>

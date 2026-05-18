@@ -227,8 +227,8 @@ void (async () => {
   return (
     <AppShell title="Miejsca">
       {/* Miasto + przycisk lokalizacji */}
-      <div className="ff-card mb-3 flex gap-2 p-3">
-        <div className="relative flex-1">
+      <div className="ff-card mb-3 flex min-w-0 gap-2 p-3">
+        <div className="relative min-w-0 flex-1">
           <input
             className="ff-input pr-10"
             value={city}
@@ -305,9 +305,9 @@ void (async () => {
           <button
             type="button"
             onClick={() => setTypeDropdownOpen((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-white/95 px-3.5 py-2.5 text-left shadow-sm transition hover:bg-white"
+            className="flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-white/95 px-3.5 py-2.5 text-left shadow-sm transition hover:bg-white"
           >
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1 overflow-hidden">
               <span className="block text-xs text-emerald-600">Typ jedzenia</span>
               <span className="block truncate font-medium text-emerald-900">
                 {activeDish || `Wszystkie (${dishTypes.length})`}
@@ -363,7 +363,7 @@ void (async () => {
           {activeDish ? 'Brak miejsc dla wybranego typu.' : 'Brak miejsc.'}
         </p>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid min-w-0 gap-3">
           {places.map((p) => (
             <PlaceCard key={p.id} place={p} />
           ))}
